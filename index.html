@@ -1,35 +1,58 @@
 <script>
   
-  
   const precedencia = "/*+-";  
-  const operadores = /[^\d()]+|[\d.]+/g;
-  const numeros = /\d+/g;
+  const regexOperadores = /[\d(.|a-z)]+|[+]+|[-]+|[*]+|[/]+|[%]+|[a-z]+|[^\s]+/g;
+  const regexVariaveis = /[\d(.|a-z)]+|[=]+|[^,]+|[\d]+|[a-z\d]+/g
+  const regexNumeros = /\d+/g;
+  const regexLetras = /[a-z]+/g
   
   //----------------------------------------------------------//
-  
-  function geraTokens(instrucao) {    
-    // Retira os espaços em branco
-    instrucao = instrucao.replace(/\s+/g, '');    
-    // Retorna os tokens
-    return instrucao.match(operadores);
-    
+
+  const sanitize = (str, regex) => {
+    return str.replace(/\s+/g, "").match(regex);
   }
 
   //----------------------------------------------------------//
 
-  function converteLiterais(tokens) {
-    let i;
-    for(i = 0; i < tokens.length; i++) {
-      let valor = tokens[i].match(numeros);
-      if(valor != null) 
-        tokens[i] = parseFloat(tokens[i], 10);      
-    }
+  const converteStringsParaNumeros = (tokens) => {
+    tokens.map((token, index) => {
+      if(token.match(regexNumeros) !== null) {
+        tokens[index] = Number(token)
+      } 
+    })
+
     return tokens;
   }
+
+  //----------------------------------------------------------//
+
+  const converteLiterais = (declaracaoVariaveis, instrucao) => {
+    const tokens = sanitize(instrucao, regexOperadores);
+    const variaveis = sanitize(declaracaoVariaveis, regexVariaveis);
+    const variaveisValidas = [];
+
+    variaveis.map(variavel => {
+      variaveisValidas.push(variavel);
+
+      if(variaveisValidas.length === 3) {        
+        if(variaveisValidas[0].match(regexLetras) && variaveisValidas[1].match('=') && variaveisValidas[2].match(regexNumeros)) {
+          tokens.map((token, index) => {
+            if(token === variaveisValidas[0]) {
+              tokens[index] = variaveisValidas[2];
+            }            
+          });
+          variaveisValidas.splice(0, variaveisValidas.length)
+        }
+      }
+    });
+
+    return converteStringsParaNumeros(tokens);
+  }
   
   //----------------------------------------------------------//
 
-  function executar(tokens) {
+  const executar = (tokens) => {
+    console.log(tokens);
     if(tokens.length == 1)
       return tokens[0];
 
@@ -39,7 +62,7 @@
     for(i = 0; i < tokens.length; i++) {
       if(typeof tokens[i] != 'string')
         continue;
-      let valor = tokens[i].match(operadores);
+      let valor = tokens[i].match(regexOperadores);
       // Se é um operador
       if(valor != null) {
         if(posOperador == -1) {
@@ -86,12 +109,13 @@
 
   
   
-  var declaracaoVariaveis = "i = 10, j = 20"
-  var instrucao = "7.1*j + 5 - i/3";
+  const declaracaoVariaveis = "i = 10, j = 20, x = 55"
+  const instrucao = "7.1 * j + 5 - i / 3 + x";
   
-  var tokens = geraTokens(instrucao);
-  tokens = converteLiterais(tokens);
-  alert(executar(tokens));
+  const literais = converteLiterais(declaracaoVariaveis, instrucao);
 
+  const resultado = executar(literais);
+
+  console.log(resultado);
 
 </script>
